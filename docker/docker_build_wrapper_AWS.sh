@@ -4,7 +4,7 @@
 
 # Setting variables
 export aws_region=eu-central-1
-export aws_account_id=519159021228
+export aws_account_id=XXX
 export Docker_registry_name=cmpsite-registry
 export Docker_registry_FQDN=$aws_account_id.dkr.ecr.$aws_region.amazonaws.com/$Docker_registry_name
 
