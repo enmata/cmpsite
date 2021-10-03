@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  #ConfigMap containing all the needed parameters running cmpsite application
+  name: cmpsite-configmap
+  namespace: cmpsite-namespace
+data:
+  #Allowed URL header to reach the API
+  DJANGO_ALLOWED_HOSTS: "192.168.99.107"
+  #Make sure is set up as "False" to production
+  DJANGO_DEBUG: "True"
+  #URL where the testing will be executed
+  DJANGO_BASE_URL: 'http://192.168.99.107:30008'
+  #These path should be according to volume mountpath db-data-volume declared on Deployment yaml
+  DJANGO_DB_LOCATION: 'cmpsite/cmpdb/db.sqlite3'
+  #Accepterd levels CRITICAL, ERROR, WARNING, INFO and DEBUG
+  DJANGO_LOG_LEVEL: "INFO"
+  #These path should be according to volume mountpath cmpsite-log-volume declared on Deployment yaml
+  DJANGO_LOG_LOCATION: "/var/log/cmpsite/django.log"

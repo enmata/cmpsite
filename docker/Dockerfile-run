@@ -1,0 +1,17 @@
+# Pulling official alpine python
+FROM python:3.8.3-alpine
+
+# Copying the application
+COPY ./cmpsite .
+
+# Installing dependencies
+RUN pip3 install --upgrade pip
+COPY ./requirements_cmpsite.txt .
+RUN pip3 install -r requirements_cmpsite.txt
+
+# Creating application log folder to mount the volume
+RUN mkdir /var/log/cmpsite
+
+# Running the application
+RUN cd /cmpsite
+ENTRYPOINT ["python3","manage.py","runserver","0.0.0.0:8000"]

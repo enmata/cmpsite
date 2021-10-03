@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  #ConfigMap containing the needed parameters for the log forwarding by used fluend agent
+  name: sidecar-configmap
+  namespace: cmpsite-namespace
+data:
+  FLUENT_ELASTICSEARCH_HOST: "localhost"
+  FLUENT_ELASTICSEARCH_PORT: "9200"
+  FLUENT_ELASTICSEARCH_SCHEME: "http"
+  FLUENT_ELASTICSEARCH_USER: "elastic"
+  FLUENT_ELASTICSEARCH_PASSWORD: "mypassword"
+  FLUENT_UID: "0"
+  fluent.conf: |
+    <source>
+      type tail
+      path "#{ENV['$DJANGO_LOG_LOCATION']}"
+      pos_file "#{ENV['$DJANGO_LOG_LOCATION']}".pos
+      time_format %Y-%m-%dT%H:%M:%S.%N
+      tag cmpsite.*
+      format json
+      read_from_head true
+      keep_time_key true
+    </source>
+
+    <filter cmpsite.**>
+      @type record_transformer
+      <record>
+        host_param "#{Socket.gethostname}"
+      </record>
+    </filter>
+
+    <match cmpsite.**>
+      type elasticsearch
+      log_level info
+      include_tag_key true
+      host "#{ENV['ES_HOST']}"
+      port "#{ENV['ES_PORT']}"
+      logstash_format true
+      flush_interval 5s
+      # Never wait longer than 5 minutes between retries.
+      max_retry_wait 60
+      # Disable the limit on the number of retries (retry forever).
+      disable_retry_limit
+      time_key time
+      reload_connections false
+    </match>

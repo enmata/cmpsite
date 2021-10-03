@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  #Deployment setting up all the needed container images to deploy the application
+  name: cmpsite-deployment
+  namespace: cmpsite-namespace
+  labels:
+    app: cmpsite
+spec:
+  #The actual database approach allows only one DB connection, so only one running container at a time is allowed
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cmpsite
+  template:
+    metadata:
+      labels:
+        app: cmpsite
+    spec:
+      volumes:
+      # Permanent volume storing django database, path defined on $DJANGO_DB_LOCATION
+      - name: db-data-volume
+        persistentVolumeClaim:
+          claimName: cmpsite-pvc
+      # Ephemeral volume storing cmpsite logs, path defined on $DJANGO_LOG_LOCATION
+      - name: cmpsite-log-volume
+        emptyDir: {}
+      # configMap with sidear fluentd configuration settings
+      - name: sidecar-configmap
+        configMap:
+          name: sidecar-configmap
+      containers:
+      #main container running cmpsite application
+      - name: cmpsite-run
+        image: 519159021228.dkr.ecr.eu-central-1.amazonaws.com/cmpsite-registry:cmpsite-run
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: /cmpsite/cmpdb
+          name: db-data-volume
+        - mountPath: /var/log/cmpsite
+          name: cmpsite-log-volume
+        envFrom:
+        #Loading settings
+        - configMapRef:
+            name: cmpsite-configmap
+        #Loading django secret keys
+        - secretRef:
+            name: cmpsite-secret
+      #container set up as a sidecar of the running cmpsite-run
+      #sharing acces to the volume containing the log DJANGO_LOG_LOCATION
+      - name: sidecar-fluentd
+        image: fluent/fluentd-kubernetes-daemonset:elasticsearch
+        command: ["sleep","3600"]
+        envFrom:
+        #needed for accessing the log DJANGO_LOG_LOCATION variable
+        - configMapRef:
+            name: cmpsite-configmap
+        #Loading configuration settings managed as a configMap
+        - configMapRef:
+            name: sidecar-configmap
+        volumeMounts:
+          - name: sidecar-configmap
+            mountPath: /fluentd/etc/fluent.conf
+            subPath: fluent.conf
+          - mountPath: /var/log/cmpsite
+            name: cmpsite-log-volume
+      initContainers:
+      #initContainer running only on the deploy used to initialize application database on _DJANGO_DB_LOCATION_
+      - name: cmpsite-init
+        image: 519159021228.dkr.ecr.eu-central-1.amazonaws.com/cmpsite-registry:cmpsite-init
+        volumeMounts:
+        #storing django database, path defined on $DJANGO_DB_LOCATION
+        - mountPath: /cmpsite/cmpdb
+          name: db-data-volume
+        envFrom:
+        #Loading configuration settings managed as a configMap
+        - configMapRef:
+            name: cmpsite-configmap
+        #Loading DB credentials
+        - secretRef:
+            name: cmpdb-secret
+        #Loading django secret keys
+        - secretRef:
+            name: cmpsite-secret
