@@ -19,7 +19,7 @@ aws ecr create-repository \
      --repository-name $Docker_registry_name \
      --region $aws_region
 
-# Building and tagging the images
+# Building and tagging images
 cd docker
 docker build -t $Docker_image_name_1 -f $Docker_image_file_1 .
 docker tag $Docker_image_name_1 $Docker_registry_FQDN:$Docker_image_name_1

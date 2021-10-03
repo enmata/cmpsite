@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script removing local Docker images on local docker deaemon aand also remobing AWS ECR registry
+# Script removing local Docker images on local docker daemon and also removing AWS ECR registry
 # Setting variables
 export aws_region=eu-central-1
 export aws_account_id=XXX
